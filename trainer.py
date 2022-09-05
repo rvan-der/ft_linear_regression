@@ -12,10 +12,33 @@ class WeightsSavingError(Exception):
 
 
 
-def train_model(nbIterations, theta0, theta1, data):
-    learning_rate = 0.0001
+def save_weights(theta0, theta1, norm_factor=None):
+    fd = None
+    try:
+        fd = open("weights.json", mode="w")
+    except FileNotFoundError:
+        print_warning_msg("Warning:\nWeights file not found. Saving updated weights to new file 'weights.json'.")
+        fd = None
+    except:
+        print_error_msg("An error occured while trying to open the weights file. Saving failed.", _exit=True)
+    if fd == None:
+        try:
+            fd = open("weights.json", mode="x")
+        except:
+            print_error_msg("An error occured while trying to save the weights to new file. Saving failed.", _exit=True)
+    if fd != None:
+        if norm_factor:
+            theta0 *= norm_factor
+            theta1 *= norm_factor
+        try:
+            json.dump({"theta0": theta0, "theta1": theta1, "norm_factor": norm_factor}, fd)
+        except:
+            print_error_msg("An error occured while trying to write to the weigths file. Saving failed.", _exit=True)
+
+
+
+def train_model(nbIterations, theta0, theta1, data, learning_rate=0.001):
     data_size = len(data)
-    data = normalize_data(data)
 
     for _ in range(nbIterations):
         gradient_t0, gradient_t1 = 0, 0
@@ -32,25 +55,19 @@ def train_model(nbIterations, theta0, theta1, data):
 
 
 
-def save_weights(theta0, theta1):
-    fd = None
-    try:
-        fd = open("weights.json", mode="w")
-    except FileNotFoundError:
-        print_warning_msg("Warning:\nWeights file not found. Saving updated weights to new file 'weights.json'.")
-        fd = None
-    except:
-        print_error_msg("An error occured while trying to open the weights file. Saving failed.", _exit=True)
-    if fd == None:
-        try:
-            fd = open("weights.json", mode="x")
-        except:
-            print_error_msg("An error occured while trying to save the weights to new file. Saving failed.", _exit=True)
-    if fd != None:
-        try:
-            json.dump({"theta0": theta0, "theta1": theta1}, fd)
-        except:
-            print_error_msg("An error occured while trying to write to the weigths file. Saving failed.", _exit=True)
+def normalize_data(data, norm_factor=None):
+    _max=norm_factor
+    if not norm_factor:
+        max_km = max(data, key=lambda e: e["km"])["km"]
+        max_price = max(data, key=lambda e: e["price"])["price"]
+        _max = max(max_km, max_price)
+    new_data = []
+    for car in data:
+        new_car = {"km": car["km"] / _max, "price": car["price"] / _max}
+        new_data.append(new_car)
+    # print(f"normalized data (norm_factor = {norm_factor}):")
+    # print(*[(car["km"],car["price"]) for car in new_data], sep='\n')
+    return (new_data, _max)
 
 
 
@@ -79,6 +96,7 @@ if __name__ == "__main__":
 
     theta0 = 0
     theta1 = 0
+    norm_factor=None
     try:
         weights = load_weights()
     except WeightsLoadingError as err:
@@ -88,9 +106,16 @@ if __name__ == "__main__":
     else:
         theta0 = weights["theta0"]
         theta1 = weights["theta1"]
+        norm_factor = weights["norm_factor"]
+
+    data, norm_factor = normalize_data(data, norm_factor)
+    if norm_factor:
+        theta0 /= norm_factor
+        theta1 /= norm_factor
 
     weights = train_model(nbIterations, theta0, theta1, data)
 
-    save_weights(weights["theta0"], weights["theta1"])
-    print(f"new weights: %f, %f"%(weights["theta0"], weights["theta1"]))
+    save_weights(weights["theta0"], weights["theta1"], norm_factor)
+    print(f"new weights (normalized): %f, %f"%(weights["theta0"], weights["theta1"]))
+    print(f"new weights : %f, %f"%(weights["theta0"] * norm_factor, weights["theta1"] * norm_factor))
     
