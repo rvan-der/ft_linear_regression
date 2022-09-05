@@ -13,8 +13,9 @@ class WeightsSavingError(Exception):
 
 
 def train_model(nbIterations, theta0, theta1, data):
-    learning_rate = 0.000000001
+    learning_rate = 0.0001
     data_size = len(data)
+    data = normalize_data(data)
 
     for _ in range(nbIterations):
         gradient_t0, gradient_t1 = 0, 0
@@ -22,12 +23,11 @@ def train_model(nbIterations, theta0, theta1, data):
             estimation = estimate_price(car["km"], theta0, theta1)
             gradient_t0 += estimation - car["price"]
             gradient_t1 += (estimation - car["price"]) * car["km"]
-        print(gradient_t0, gradient_t1)
         gradient_t0 /= data_size
         gradient_t1 /= data_size
         theta0 -= learning_rate * gradient_t0
         theta1 -= learning_rate * gradient_t1
-
+    print(f"gradients: {gradient_t0} , {gradient_t0}")
     return {"theta0": theta0, "theta1": theta1}
 
 

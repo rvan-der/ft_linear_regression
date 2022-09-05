@@ -91,3 +91,16 @@ def load_weights(fileName="weights.json"):
                 raise WeightsLoadingError("Invalid data in the weights file.")
         fd.close()
     return weights
+
+
+
+def normalize_data(data):
+    min_km = min(data, key=lambda e: e["km"])["km"]
+    max_km = max(data, key=lambda e: e["km"])["km"]
+    min_price = min(data, key=lambda e: e["price"])["price"]
+    max_price = max(data, key=lambda e: e["price"])["price"]
+    new_data = []
+    for car in data:
+        new_car = {"km": (car["km"] - min_km) / max_km, "price": (car["price"] - min_price) / max_price}
+        new_data.append(new_car)
+    return new_data
