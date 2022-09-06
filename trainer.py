@@ -1,18 +1,18 @@
 import sys
 import json
 from parsing_tools import *
-from predictor import estimate_price
+from visualizator.visualizator import launch_visualizator
 
 
 
 class WeightsSavingError(Exception):
     def __init__(self,message=""):
-        # Exception.__init__(message)
+        Exception.__init__(message)
         self.message = message
 
 
 
-def save_weights(theta0, theta1, norm_factor=None):
+def save_weights(theta0, theta1, norm_factor=1):
     fd = None
     try:
         fd = open("weights.json", mode="w")
@@ -26,24 +26,20 @@ def save_weights(theta0, theta1, norm_factor=None):
             fd = open("weights.json", mode="x")
         except:
             print_error_msg("An error occured while trying to save the weights to new file. Saving failed.", _exit=True)
-    if fd != None:
-        if norm_factor:
-            theta0 *= norm_factor
-            theta1 *= norm_factor
-        try:
-            json.dump({"theta0": theta0, "theta1": theta1, "norm_factor": norm_factor}, fd)
-        except:
-            print_error_msg("An error occured while trying to write to the weigths file. Saving failed.", _exit=True)
+    try:
+        json.dump({"theta0": theta0, "theta1": theta1, "norm_factor": norm_factor}, fd)
+    except:
+        print_error_msg("An error occured while trying to write to the weigths file. Saving failed.", _exit=True)
 
 
 
-def train_model(nbIterations, theta0, theta1, data, learning_rate=0.001):
+def train_model(nbIterations, theta0, theta1, data, learning_rate=0.01):
     data_size = len(data)
 
     for _ in range(nbIterations):
         gradient_t0, gradient_t1 = 0, 0
         for car in data:
-            estimation = estimate_price(car["km"], theta0, theta1)
+            estimation = theta1 * car["km"] + theta0
             gradient_t0 += estimation - car["price"]
             gradient_t1 += (estimation - car["price"]) * car["km"]
         gradient_t0 /= data_size
@@ -73,6 +69,13 @@ def normalize_data(data, norm_factor=None):
 
 
 if __name__ == "__main__":
+    try:
+        data = read_csv("data.csv")
+    except DataLoadingError as err:
+        print_error_msg("Couldn't load the data:\n" + err.message, _exit=True)
+    except:
+        print_error_msg("Couldn't load the data.", _exit=True)
+
     argc = len(sys.argv)
     if argc < 2:
         print_error_msg("Missing number of iterations as argument.", _exit=True)
@@ -85,12 +88,6 @@ if __name__ == "__main__":
     if nbIterations < 1:
         print_error_msg("Number of iterations must be an integer >= 1.", _exit=True)
 
-    try:
-        data = read_csv("data.csv")
-    except DataLoadingError as err:
-        print_error_msg("Couldn't load the data:\n" + err.message, _exit=True)
-    except:
-        print_error_msg("Couldn't load the data.", _exit=True)
 
     # print(*[(car["km"],car["price"]) for car in data], sep='\n')
 
@@ -109,13 +106,9 @@ if __name__ == "__main__":
         norm_factor = weights["norm_factor"]
 
     data, norm_factor = normalize_data(data, norm_factor)
-    if norm_factor:
-        theta0 /= norm_factor
-        theta1 /= norm_factor
 
     weights = train_model(nbIterations, theta0, theta1, data)
 
     save_weights(weights["theta0"], weights["theta1"], norm_factor)
-    print(f"new weights (normalized): %f, %f"%(weights["theta0"], weights["theta1"]))
-    print(f"new weights : %f, %f"%(weights["theta0"] * norm_factor, weights["theta1"] * norm_factor))
+    print(f"new weights: %f, %f"%(weights["theta0"], weights["theta1"]))
     

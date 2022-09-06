@@ -83,10 +83,10 @@ def load_weights(fileName="weights.json"):
             if not isinstance(weights, dict):
                 fd.close()
                 raise WeightsLoadingError("Invalid data in the weights file.")
-            if "theta0" not in weights or "theta1" not in weights:
+            if not all([x in weights for x in ["theta0", "theta1", "norm_factor"]]):
                 fd.close()
                 raise WeightsLoadingError("Missing data in the weights file.")
-            if not isinstance(weights["theta0"], (float, int)) or not isinstance(weights["theta1"], (float, int)):
+            if not all([isinstance(weights[x], (float, int)) for x in ["theta0", "theta1", "norm_factor"]]):
                 fd.close()
                 raise WeightsLoadingError("Invalid data in the weights file.")
         fd.close()
