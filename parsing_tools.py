@@ -3,16 +3,30 @@ import json
 
 
 
+class WeightsSavingWarning(Exception):
+    def __init__(self,message=""):
+        Exception.__init__(message)
+        self.message = message
+
+
+
+class WeightsSavingError(Exception):
+    def __init__(self,message=""):
+        Exception.__init__(message)
+        self.message = message
+
+
+
 class DataLoadingError(Exception):
     def __init__(self, message=""):
-        # Exception.__init__()
+        Exception.__init__()
         self.message = message
 
 
 
 class WeightsLoadingError(Exception):
     def __init__(self, message=""):
-        # Exception.__init__()
+        Exception.__init__()
         self.message = message
 
 
@@ -91,3 +105,24 @@ def load_weights(fileName="weights.json"):
                 raise WeightsLoadingError("Invalid data in the weights file.")
         fd.close()
     return weights
+
+
+
+def save_weights(theta0, theta1, norm_factor=1):
+    fd = None
+    try:
+        fd = open("weights.json", mode="w")
+    except FileNotFoundError:
+        raise WeightsSavingWarning("Warning:\nWeights file not found. Saving updated weights to new file 'weights.json'.")
+        fd = None
+    except:
+        raise WeightsSavingError("An error occured while trying to open the weights file. Saving failed.")
+    if fd == None:
+        try:
+            fd = open("weights.json", mode="x")
+        except:
+            raise WeightsSavingError("An error occured while trying to save the weights to new file. Saving failed.")
+    try:
+        json.dump({"theta0": theta0, "theta1": theta1, "norm_factor": norm_factor}, fd)
+    except:
+        raise WeightsSavingError("An error occured while trying to write to the weigths file. Saving failed.")
