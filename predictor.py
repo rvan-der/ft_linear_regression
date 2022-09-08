@@ -1,4 +1,5 @@
 import sys
+import random
 from parsing_tools import *
 
 
@@ -9,24 +10,7 @@ def estimate_price(distance, theta0=0, theta1=0, norm_factor=1):
 
 
 if __name__ == "__main__":
-
-    argc = len(sys.argv)
-    if argc < 2:
-        print_error_msg("Missing distance argument.")
-        exit()
-    if argc > 2:
-        print_error_msg("Too many arguments.")
-        exit()
-
-    distance = 0
-    try:
-        distance = int(sys.argv[1])
-    except:
-        print_error_msg("Distance must be a positive integer.")
-        exit()
-    if distance < 0:
-        print_error_msg("Distance must be a positive integer.")
-        exit()
+    currencies = ["$ ", "¥ ", "₡ ", "₱ ", "£ ", "€ ", "¢ ", "₩ ", "₭ ", "₮ ", "₦ ", " gold coins", "₽ ", "฿ ", "₺ ", "₴ ", " nickels", " credits", " darseks", " flanian pobble beads", " kalganids", " silver coins", " copper coins", " simoleons", " robux", " emeralds", " silver eagles", " ningis", "triganic pus"]
 
     theta0 = 0
     theta1 = 0
@@ -41,6 +25,28 @@ if __name__ == "__main__":
         theta0 = weights["theta0"]
         theta1 = weights["theta1"]
         norm_factor = weights["norm_factor"]
-   
 
-    print("Estimated price:", estimate_price(distance, theta0, theta1, norm_factor))
+    print("Welcome to rvan-der's car price predictor for ft_linear_regression !")
+
+    while True:
+        check = False
+        while not check:
+            check = True
+            distance = input("\nTell me how many km the car has traveled and i'll tell you its price.\n> ")
+            try:
+                distance = float(distance)
+            except:
+                print("The distance must be a positive number. Try again !")
+                check = False
+            else:
+                if distance < 0:
+                    print("The distance must be a positive number. Try again !")
+                    check = False
+        print("Your car is worth %d%s."%(estimate_price(distance, theta0, theta1, norm_factor), random.choice(currencies)))
+        print("\nDo you want to know the price of another car ? (y/n)")
+        yn=""
+        while yn.lower().strip() not in ["yes", "sure", "yeah", "yea", "yep", "yup", "oui", "y3s", "y", "no", "n", "n0", "nope", "non"]:
+            yn = input("> ")
+        if yn.lower().strip() in ["no", "n", "n0", "nope", "non"]:
+            print("\nOk bye !")
+            exit()

@@ -73,32 +73,33 @@ if __name__ == "__main__":
 
     data, norm_factor = normalize_data(data, weights["norm_factor"])
 
-    print("\nWelcome to rvan-der's training program for ft_linear_regression !\n\
+    print("\nWelcome to rvan-der's model training program for ft_linear_regression !\n\
 Launch with option -v for visualization and bonuses.")
 
     while True:
 
         check = False
         while not check:
-            nbIterations = input("\nHow many iterations of training would you like to perform ?\n ")
+            nbIterations = input("\nHow many iterations of training would you like to perform ?\n> ")
             check = verify_trainer_answer(nbIterations)
 
         nbIterations = int(nbIterations)
         if nbIterations == 0:
             print("Nothing was performed.")
         else:
-            print("training\n...")
+            print("training model... ", end="", flush=True)
             weights = train_model(weights, data, nbIterations)
             try:
                 save_weights(weights["theta0"], weights["theta1"], norm_factor)
             except WeightsSavingError as e:
                 print_error_msg(e.message)
-            print("finished !\nNew weights (for data normalized with a factor of 1/%d):\n T0 = %f ; T1 = %f"%(norm_factor, weights["theta0"], weights["theta1"]))
+            print("finished !\nNew weights (for data normalized with a factor of 1/%d): T0 = %f ; T1 = %f"%(norm_factor, weights["theta0"], weights["theta1"]))
         
         print("\nDo you want to continue training ? (y/n)")
         yn=""
-        while yn.lower().strip() not in ["yes", "y", "no", "n"]:
-            yn = input(" ")
-        if yn.lower().strip() in ["no", "n"]:
+        while yn.lower().strip() not in ["yes", "sure", "yeah", "yea", "yep", "yup", "oui", "y3s", "y", "no", "n", "n0", "nope", "non"]:
+            yn = input("> ")
+        if yn.lower().strip() in ["no", "n", "n0", "nope", "non"]:
+            print("\nOk bye !")
             exit()
     
