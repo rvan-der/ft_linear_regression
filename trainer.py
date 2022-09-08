@@ -5,8 +5,10 @@ from visualizator.visualizator import launch_visualizator
 
 
 
-def train_model(nbIterations, theta0, theta1, data, learning_rate=0.01):
+def train_model(weights, data, nbIterations, learning_rate=0.01):
     data_size = len(data)
+    theta0=weights["theta0"]
+    theta1=weights["theta1"]
 
     for _ in range(nbIterations):
         gradient_t0, gradient_t1 = 0, 0
@@ -18,12 +20,14 @@ def train_model(nbIterations, theta0, theta1, data, learning_rate=0.01):
         gradient_t1 /= data_size
         theta0 -= learning_rate * gradient_t0
         theta1 -= learning_rate * gradient_t1
-    print(f"gradients: {gradient_t0} , {gradient_t0}")
-    return {"theta0": theta0, "theta1": theta1}
+
+    weights["theta0"] = theta0
+    weights["theta1"] = theta1
+    return weights
 
 
 
-def normalize_data(data, norm_factor=None):
+def normalize_data(data, norm_factor=0):
     if not norm_factor:
         max_km = max(data, key=lambda e: e["km"])["km"]
         max_price = max(data, key=lambda e: e["price"])["price"]
@@ -37,6 +41,18 @@ def normalize_data(data, norm_factor=None):
 
 
 
+def verify_trainer_answer(answer):
+    try:
+        answer = int(answer)
+    except:
+        print("Training can only be performed a positive whole number of times. Try again !")
+        return False
+    if answer < 0:
+        print("Training can only be performed a positive whole number of times. Try again !")
+        return False
+    return True
+
+
 
 if __name__ == "__main__":
     try:
@@ -46,30 +62,43 @@ if __name__ == "__main__":
     except:
         print_error_msg("Couldn't load the data.\nexiting...", _exit=True)
 
-    theta0 = 0
-    theta1 = 0
-    norm_factor=None
     try:
         weights = load_weights()
     except WeightsLoadingError as err:
         print_warning_msg("Warning:\n" + err.message + " Weights are set to 0.")
+        weights = {"theta0": 0, "theta1": 0, "norm_factor": 0}
     except:
         print_warning_msg("Warning:\nCouldn't load the weights. Weights are set to 0.")
-    else:
-        theta0 = weights["theta0"]
-        theta1 = weights["theta1"]
-        norm_factor = weights["norm_factor"]
+        weights = {"theta0": 0, "theta1": 0, "norm_factor": 0}
 
-    data, norm_factor = normalize_data(data, norm_factor)
+    data, norm_factor = normalize_data(data, weights["norm_factor"])
 
-    weights = train_model(nbIterations, theta0, theta1, data)
+    print("\nWelcome to rvan-der's training program for ft_linear_regression !\n\
+Launch with option -v for visualization and bonuses.")
 
-    try:
-        save_weights(weights["theta0"], weights["theta1"], norm_factor)
-    except WeightsSavingError as e:
-        print_error_msg(e.message)
-    except WeightsSavingWarning as w:
-        print_warning_msg(e.message)
+    while True:
 
-    print(f"new weights: %f, %f"%(weights["theta0"], weights["theta1"]))
+        check = False
+        while not check:
+            nbIterations = input("\nHow many iterations of training would you like to perform ?\n ")
+            check = verify_trainer_answer(nbIterations)
+
+        nbIterations = int(nbIterations)
+        if nbIterations == 0:
+            print("Nothing was performed.")
+        else:
+            print("training\n...")
+            weights = train_model(weights, data, nbIterations)
+            try:
+                save_weights(weights["theta0"], weights["theta1"], norm_factor)
+            except WeightsSavingError as e:
+                print_error_msg(e.message)
+            print("finished !\nNew weights (for data normalized with a factor of 1/%d):\n T0 = %f ; T1 = %f"%(norm_factor, weights["theta0"], weights["theta1"]))
+        
+        print("\nDo you want to continue training ? (y/n)")
+        yn=""
+        while yn.lower().strip() not in ["yes", "y", "no", "n"]:
+            yn = input(" ")
+        if yn.lower().strip() in ["no", "n"]:
+            exit()
     
