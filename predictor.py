@@ -26,7 +26,7 @@ if __name__ == "__main__":
         theta1 = weights["theta1"]
         norm_factor = weights["norm_factor"]
 
-    print("Welcome to rvan-der's car price predictor for ft_linear_regression !")
+    print("\nWelcome to rvan-der's car price predictor for ft_linear_regression !")
 
     while True:
         check = False

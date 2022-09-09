@@ -11,7 +11,7 @@ def launch_visualizator():
     main_window = MainWindow()
     main_window.show()
 
-    app.exec()
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
     launch_visualizator()
