@@ -101,7 +101,7 @@ def load_weights(fileName="weights.json"):
 
 
 
-def save_weights(theta0, theta1, norm_factor=1):
+def save_weights(weights):
     fd = None
     try:
         fd = open("weights.json", mode="w")
@@ -113,6 +113,6 @@ def save_weights(theta0, theta1, norm_factor=1):
     except:
         raise WeightsSavingError("An error occured while trying to open the weights file. Saving failed.")
     try:
-        json.dump({"theta0": theta0, "theta1": theta1, "norm_factor": norm_factor}, fd)
+        json.dump(weights, fd)
     except:
         raise WeightsSavingError("An error occured while trying to write to the weigths file. Saving failed.")

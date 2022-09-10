@@ -10,7 +10,7 @@ class MainWindow(QMainWindow):
             self.setCentralWidget(widget)
         self.status = self.statusBar()
         geometry = self.screen().availableGeometry()
-        self.setFixedSize(geometry.width() * 0.9, geometry.height() * 0.9)
+        self.setFixedSize(geometry.width() * 0.6, geometry.height() * 0.7)
         self.displayStatusMsg("Ready to regress in a linear fashion !")
 
         # self.menu = self.menuBar()

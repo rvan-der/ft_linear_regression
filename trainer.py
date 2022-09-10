@@ -9,13 +9,17 @@ from visualizator.visualizator import launch_visualizator
 class Trainer(QRunnable):
 
     weights_updated = Signal(dict)
+    job_finished = Signal(dict)
 
-    def __init__(self, weights, data, nbIterations, qt=True):
-        QRunnable.__init__()
+    def __init__(self, weights, data, nbIterations):
+        super(QRunnable).__init__()
+        self.weights = weights
+        self.data = data
+        self.nbIterations = nbIterations
 
     @Slot()
     def run(self):
-        self.train_model(self.weights, self.data, self.nbIterations)
+        self.train_model(self.weights, self.data, self.nbIterations, qt=True)
 
 
     def train_model(weights, data, nbIterations, qt=False):
@@ -37,15 +41,15 @@ class Trainer(QRunnable):
                 self.weights_updated.emit(weights)
 
         if qt:
-            self.weights_updated.emit(weights)
+            self.job_finished.emit(weights)
         return weights
 
 
-    def normalize_data(data, norm_factor=0):
-        if not norm_factor:
+    def normalize_data(data, weights):
+        if not weights["norm_factor"]:
             max_km = max(data, key=lambda e: e["km"])["km"]
             max_price = max(data, key=lambda e: e["price"])["price"]
-            norm_factor = max(max_km, max_price)
+            weights["norm_factor"] = max(max(max_km, max_price), 1)
 
         new_data = []
         for car in data:
@@ -72,11 +76,13 @@ if __name__ == "__main__":
     argc = len(sys.argv)
     if argc > 2:
         print_error_msg("Too many arguments.", _exit=True)
+
     if argc == 2:
         if sys.argv[1] != "-v":
             print_error_msg("This option doesn't exist.", _exit=True)
         else:
             launch_visualizator()
+
     else:
         try:
             data = read_csv("data.csv")
@@ -94,7 +100,7 @@ if __name__ == "__main__":
             print_warning_msg("Warning:\nCouldn't load the weights. Weights are set to 0.")
             weights = {"theta0": 0, "theta1": 0, "norm_factor": 0}
 
-        data, norm_factor = Trainer.normalize_data(data, weights["norm_factor"])
+        normData = Trainer.normalize_data(data, weights)
 
         print("\nWelcome to rvan-der's model training program for ft_linear_regression !\n\
 Launch with option -v for visualization and bonuses.")
@@ -111,9 +117,9 @@ Launch with option -v for visualization and bonuses.")
                 print("Nothing was performed.")
             else:
                 print("training model... ", end="", flush=True)
-                weights = Trainer.train_model(weights, data, nbIterations)
+                weights = Trainer.train_model(weights, normData, nbIterations)
                 try:
-                    save_weights(weights["theta0"], weights["theta1"], norm_factor)
+                    save_weights(weights)
                 except WeightsSavingError as e:
                     print_error_msg(e.message)
                 print("finished !\nNew weights (for data normalized with a factor of 1/%d): T0 = %f ; T1 = %f"%(norm_factor, weights["theta0"], weights["theta1"]))
