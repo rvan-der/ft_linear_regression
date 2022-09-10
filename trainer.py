@@ -1,62 +1,10 @@
 import sys
 import json
 
-from PySide6.QtCore import QRunnable, Slot, Signal
 from parsing_tools import *
-from visualizator.visualizator import launch_visualizator
-
-
-class Trainer(QRunnable):
-
-    weights_updated = Signal(dict)
-    job_finished = Signal(dict)
-
-    def __init__(self, weights, data, nbIterations):
-        super(QRunnable).__init__()
-        self.weights = weights
-        self.data = data
-        self.nbIterations = nbIterations
-
-    @Slot()
-    def run(self):
-        self.train_model(self.weights, self.data, self.nbIterations, qt=True)
-
-
-    def train_model(weights, data, nbIterations, qt=False):
-        learning_rate = 0.01
-        dataSize = len(data)
-        nbAnimationPoints = min(nbIterations, 100)
-
-        for i in range(nbIterations):
-            gradient_t0, gradient_t1 = 0, 0
-            for car in data:
-                estimation = weights["theta1"] * car["km"] + weights["theta0"]
-                gradient_t0 += estimation - car["price"]
-                gradient_t1 += (estimation - car["price"]) * car["km"]
-            gradient_t0 /= dataSize
-            gradient_t1 /= dataSize
-            weights["theta0"] -= learning_rate * gradient_t0
-            weights["theta1"] -= learning_rate * gradient_t1
-            if qt and not i % (nbIterations // nbAnimationPoints) and i != nbIterations - 1 :
-                self.weights_updated.emit(weights)
-
-        if qt:
-            self.job_finished.emit(weights)
-        return weights
-
-
-    def normalize_data(data, weights):
-        if not weights["norm_factor"]:
-            max_km = max(data, key=lambda e: e["km"])["km"]
-            max_price = max(data, key=lambda e: e["price"])["price"]
-            weights["norm_factor"] = max(max(max_km, max_price), 1)
-
-        new_data = []
-        for car in data:
-            new_car = {"km": car["km"] / norm_factor, "price": car["price"] / norm_factor}
-            new_data.append(new_car)
-        return (new_data, norm_factor)
-
+from visualizer.visualizer import launch_visualizer
+from normalizer import normalize_data
+from trainer_qrunnable import Trainer
 
 
 def verify_trainer_answer(answer):
@@ -81,7 +29,7 @@ if __name__ == "__main__":
         if sys.argv[1] != "-v":
             print_error_msg("This option doesn't exist.", _exit=True)
         else:
-            launch_visualizator()
+            launch_visualizer()
 
     else:
         try:
@@ -100,7 +48,7 @@ if __name__ == "__main__":
             print_warning_msg("Warning:\nCouldn't load the weights. Weights are set to 0.")
             weights = {"theta0": 0, "theta1": 0, "norm_factor": 0}
 
-        normData = Trainer.normalize_data(data, weights)
+        normalizedData = normalize_data(data, weights)
 
         print("\nWelcome to rvan-der's model training program for ft_linear_regression !\n\
 Launch with option -v for visualization and bonuses.")
@@ -117,12 +65,12 @@ Launch with option -v for visualization and bonuses.")
                 print("Nothing was performed.")
             else:
                 print("training model... ", end="", flush=True)
-                weights = Trainer.train_model(weights, normData, nbIterations)
+                weights = Trainer.train_model(weights, normalizedData, nbIterations)
                 try:
                     save_weights(weights)
                 except WeightsSavingError as e:
                     print_error_msg(e.message)
-                print("finished !\nNew weights (for data normalized with a factor of 1/%d): T0 = %f ; T1 = %f"%(norm_factor, weights["theta0"], weights["theta1"]))
+                print("finished !\nNew weights (for data normalized with a factor of 1/%d): T0 = %f ; T1 = %f"%(weights["norm_factor"], weights["theta0"], weights["theta1"]))
             
             print("\nDo you want to continue training ? (y/n)")
             yn=""

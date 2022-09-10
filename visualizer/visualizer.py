@@ -1,13 +1,13 @@
 import sys
 
 from PySide6.QtWidgets import QApplication
-from visualizator.main_window import MainWindow
-from visualizator.main_widget import MainWidget
+from visualizer.main_window import MainWindow
+from visualizer.main_widget import MainWidget
 from parsing_tools import *
 
 
 
-def launch_visualizator():
+def launch_visualizer():
     try:
         data = read_csv("data.csv")
     except DataLoadingError as err:
@@ -23,13 +23,13 @@ def launch_visualizator():
     except:
         print_warning_msg("Warning:\nCouldn't load the weights. Weights are set to 0.")
         weights = {"theta0": 0, "theta1": 0, "norm_factor": 0}
-        
+
     app = QApplication([])
     central_widget = MainWidget(data, weights)
-    main_window = MainWindow()
+    main_window = MainWindow(central_widget)
     main_window.show()
 
     sys.exit(app.exec())
 
 if __name__ == "__main__":
-    launch_visualizator()
+    launch_visualizer()
