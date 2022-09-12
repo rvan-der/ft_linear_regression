@@ -1,23 +1,30 @@
-from PySide6.QtCore import QRunnable, Slot, Signal
+from PySide6.QtCore import QRunnable, QObject, Slot, Signal
+import time
 
 
-class Trainer(QRunnable):
+class TrainerSignals(QObject):
 
     weights_updated = Signal(dict)
     job_finished = Signal(dict)
 
+
+
+class Trainer(QRunnable):
+
     def __init__(self, weights, data, nbIterations):
-        super(QRunnable).__init__()
+        QRunnable.__init__(self)
         self.weights = weights
         self.data = data
         self.nbIterations = nbIterations
+        self.signals = TrainerSignals()
+
 
     @Slot()
     def run(self):
         self.train_model(self.weights, self.data, self.nbIterations, qt=True)
 
 
-    def train_model(weights, data, nbIterations, qt=False):
+    def train_model(self, weights, data, nbIterations, qt=False):
         learning_rate = 0.01
         dataSize = len(data)
         nbAnimationPoints = min(nbIterations, 100)
@@ -33,8 +40,9 @@ class Trainer(QRunnable):
             weights["theta0"] -= learning_rate * gradient_t0
             weights["theta1"] -= learning_rate * gradient_t1
             if qt and not i % (nbIterations // nbAnimationPoints) and i != nbIterations - 1 :
-                self.weights_updated.emit(weights)
+                time.sleep(0.01)
+                self.signals.weights_updated.emit(weights)
 
         if qt:
-            self.job_finished.emit(weights)
+            self.signals.job_finished.emit(weights)
         return weights
