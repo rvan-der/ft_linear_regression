@@ -8,6 +8,9 @@ class WeightsSavingError(Exception):
         Exception.__init__(message)
         self.message = message
 
+    def __str__(self):
+        return self.message
+
 
 
 class DataLoadingError(Exception):
@@ -15,12 +18,20 @@ class DataLoadingError(Exception):
         Exception.__init__()
         self.message = message
 
+    def __str__(self):
+        return self.message
+
+
 
 
 class WeightsLoadingError(Exception):
     def __init__(self, message=""):
         Exception.__init__()
         self.message = message
+
+    def __str__(self):
+        return self.message
+
 
 
 

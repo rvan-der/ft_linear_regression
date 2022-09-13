@@ -25,7 +25,7 @@ class Trainer(QRunnable):
 
 
     def train_model(self, weights, data, nbIterations, qt=False):
-        learning_rate = 0.01
+        learning_rate = 0.05
         dataSize = len(data)
         nbAnimationPoints = min(nbIterations, 100)
 
@@ -40,7 +40,7 @@ class Trainer(QRunnable):
             weights["theta0"] -= learning_rate * gradient_t0
             weights["theta1"] -= learning_rate * gradient_t1
             if qt and not i % (nbIterations // nbAnimationPoints) and i != nbIterations - 1 :
-                time.sleep(0.01)
+                time.sleep(0.015)
                 self.signals.weights_updated.emit(weights)
 
         if qt:
