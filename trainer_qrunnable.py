@@ -11,21 +11,21 @@ class TrainerSignals(QObject):
 
 class Trainer(QRunnable):
 
-    def __init__(self, weights, data, nbIterations):
-        QRunnable.__init__(self)
+    def __init__(self, weights, data, nbIterations, learningRate=0.1):
+        super(Trainer, self).__init__()
         self.weights = weights
         self.data = data
         self.nbIterations = nbIterations
+        self.learningRate = learningRate
         self.signals = TrainerSignals()
 
 
     @Slot()
     def run(self):
-        self.train_model(self.weights, self.data, self.nbIterations, qt=True)
+        self.train_model(self.weights, self.data, self.nbIterations, learningRate=self.learningRate)
 
 
-    def train_model(self, weights, data, nbIterations, qt=False):
-        learning_rate = 0.05
+    def train_model(self, weights, data, nbIterations, learningRate=0.1):
         dataSize = len(data)
         nbAnimationPoints = min(nbIterations, 100)
 
@@ -37,12 +37,11 @@ class Trainer(QRunnable):
                 gradient_t1 += (estimation - car["price"]) * car["km"]
             gradient_t0 /= dataSize
             gradient_t1 /= dataSize
-            weights["theta0"] -= learning_rate * gradient_t0
-            weights["theta1"] -= learning_rate * gradient_t1
-            if qt and not i % (nbIterations // nbAnimationPoints) and i != nbIterations - 1 :
+            weights["theta0"] -= learningRate * gradient_t0
+            weights["theta1"] -= learningRate * gradient_t1
+            if not i % (nbIterations // nbAnimationPoints) and i != nbIterations - 1 :
                 time.sleep(0.015)
                 self.signals.weights_updated.emit(weights)
 
-        if qt:
-            self.signals.job_finished.emit(weights)
+        self.signals.job_finished.emit(weights)
         return weights

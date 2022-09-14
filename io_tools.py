@@ -1,11 +1,12 @@
 import sys
 import json
+import os
 
 
 
 class WeightsSavingError(Exception):
     def __init__(self,message=""):
-        Exception.__init__(message)
+        super(WeightsSavingError, self).__init__()
         self.message = message
 
     def __str__(self):
@@ -15,23 +16,31 @@ class WeightsSavingError(Exception):
 
 class DataLoadingError(Exception):
     def __init__(self, message=""):
-        Exception.__init__()
+        super(DataLoadingError, self).__init__()
         self.message = message
 
     def __str__(self):
         return self.message
-
 
 
 
 class WeightsLoadingError(Exception):
     def __init__(self, message=""):
-        Exception.__init__()
+        super(WeightsLoadingError, self).__init__()
         self.message = message
 
     def __str__(self):
         return self.message
 
+
+
+class WeightsDeletionError(Exception):
+    def __init__(self, message=""):
+        super(WeightsDeletionError, self).__init__()
+        self.message = message
+
+    def __str__(self):
+        return self.message
 
 
 
@@ -44,6 +53,14 @@ def print_error_msg(msg, _exit=False):
 
 def print_warning_msg(msg):
     print("\033[93m" + msg + "\033[0m", file=sys.stderr, flush=True)
+
+
+
+def delete_weights_file():
+    try:
+        os.remove("weights.json")
+    except Exception as e:
+        raise WeightsDeletionError("Failed to delete the weights file: " + str(e))
 
 
 
@@ -87,10 +104,8 @@ def load_weights(fileName="weights.json"):
     weights = None
     try:
         fd = open(fileName)
-    except FileNotFoundError:
-        raise WeightsLoadingError("Didn't find the weights file.")
-    except:
-        raise WeightsLoadingError("Couldn't open the weights file.")
+    except Exception as e:
+        raise WeightsLoadingError("Couldn't open the weights file: %s."%(str(e)))
     if fd:
         try:
             weights = json.load(fd)
@@ -127,3 +142,39 @@ def save_weights(weights):
         json.dump(weights, fd)
     except:
         raise WeightsSavingError("An error occured while trying to write to the weigths file. Saving failed.")
+
+
+
+def normalize_data(data, weights):
+    if not weights["norm_factor"]:
+        max_km = max(data, key=lambda e: e["km"])["km"]
+        max_price = max(data, key=lambda e: e["price"])["price"]
+        weights["norm_factor"] = max(max(max_km, max_price), 1)
+
+    new_data = []
+    for car in data:
+        new_car = {"km": car["km"] / weights["norm_factor"], "price": car["price"] / weights["norm_factor"]}
+        new_data.append(new_car)
+    return new_data
+
+
+
+def condensed_notation(n, maxChars):
+    strn = str(n)
+    if len(strn) <= maxChars:
+        return strn
+
+    strn = "%f"%(n)
+    intRange = strn.find(".")
+    if intRange == maxChars or intRange == maxChars - 1:
+        return str(round(n))
+
+    if intRange < maxChars:
+        s = "{:.%df}"%(maxChars - 1 - intRange)
+        return s.format(n)
+        
+    power = str(intRange - 1 - int(n < 0))
+    sigFigs = max(0, maxChars - len(power) - int(n < 0) - 3)
+    s = "{:.%de}"%(sigFigs)
+    s = s.format(n).split("+")
+    return s[0] + power

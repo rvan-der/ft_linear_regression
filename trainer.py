@@ -1,10 +1,26 @@
 import sys
 import json
 
-from parsing_tools import *
+from io_tools import *
 from visualizer.visualizer import launch_visualizer
-from normalizer import normalize_data
-from trainer_qrunnable import Trainer
+
+
+def train_model(weights, data, nbIterations, learningRate=0.1):
+    dataSize = len(data)
+    nbAnimationPoints = min(nbIterations, 100)
+
+    for i in range(nbIterations):
+        gradient_t0, gradient_t1 = 0, 0
+        for car in data:
+            estimation = weights["theta1"] * car["km"] + weights["theta0"]
+            gradient_t0 += estimation - car["price"]
+            gradient_t1 += (estimation - car["price"]) * car["km"]
+        gradient_t0 /= dataSize
+        gradient_t1 /= dataSize
+        weights["theta0"] -= learningRate * gradient_t0
+        weights["theta1"] -= learningRate * gradient_t1
+
+    return weights
 
 
 def verify_trainer_answer(answer):
@@ -34,18 +50,13 @@ if __name__ == "__main__":
     else:
         try:
             data = read_csv("data.csv")
-        except DataLoadingError as err:
-            print_error_msg("Couldn't load the data:\n" + err.message + "\nexiting...", _exit=True)
-        except:
-            print_error_msg("Couldn't load the data.\nexiting...", _exit=True)
+        except Exception as e:
+            print_error_msg("Couldn't load the data:\n" + str(e) + "\nexiting...", _exit=True)
 
         try:
             weights = load_weights()
-        except WeightsLoadingError as err:
-            print_warning_msg("Warning:\n" + err.message + " Weights are set to 0.")
-            weights = {"theta0": 0, "theta1": 0, "norm_factor": 0}
-        except:
-            print_warning_msg("Warning:\nCouldn't load the weights. Weights are set to 0.")
+        except Exception as e:
+            print_warning_msg("Warning:\n" + str(e) + " Weights are set to 0.")
             weights = {"theta0": 0, "theta1": 0, "norm_factor": 0}
 
         normalizedData = normalize_data(data, weights)
@@ -65,7 +76,7 @@ Launch with option -v for visualization and bonuses.")
                 print("Nothing was performed.")
             else:
                 print("training model... ", end="", flush=True)
-                weights = Trainer.train_model(weights, normalizedData, nbIterations)
+                weights = train_model(weights, normalizedData, nbIterations)
                 try:
                     save_weights(weights)
                 except WeightsSavingError as e:
@@ -74,7 +85,7 @@ Launch with option -v for visualization and bonuses.")
             
             print("\nDo you want to continue training ? (y/n)")
             yn=""
-            while yn.lower().strip() not in ["yes", "sure", "yeah", "yea", "yep", "yup", "oui", "y3s", "y", "no", "n", "n0", "nope", "non"]:
+            while yn.lower().strip() not in ["ye", "yes", "sure", "yeah", "yea", "yep", "yup", "oui", "y3s", "y", "no", "n", "n0", "nope", "non"]:
                 yn = input("> ")
             if yn.lower().strip() in ["no", "n", "n0", "nope", "non"]:
                 print("\nOk bye !")

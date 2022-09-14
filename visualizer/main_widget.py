@@ -1,11 +1,10 @@
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QSizePolicy, QFrame
-from PySide6.QtCharts import QChartView, QChart, QValueAxis, QScatterSeries, QLineSeries
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QFrame
+from PySide6.QtCharts import QChartView, QValueAxis, QScatterSeries, QLineSeries
 from PySide6.QtGui import QColor
 from PySide6.QtCore import Qt, Slot, Signal, QThreadPool
 
 from visualizer.command_widget import CommandWidget
-from parsing_tools import *
-from normalizer import normalize_data
+from io_tools import *
 from trainer_qrunnable import Trainer
 
 
@@ -92,10 +91,16 @@ class MainWidget(QWidget):
 
 	@Slot()
 	def launch_training(self):
-		self.status_msg.emit("Training the model...", 0)
-		self.commandWidget.disableTrainButton()
+
 		nbIterations = self.commandWidget.trainInput.value()
-		trainer = Trainer(self.weights, self.normalizedData, nbIterations)
+		if nbIterations == 0:
+			self.status_msg.emit("Nothing was performed...", 5000)
+			return
+		self.commandWidget.disableTrainButton()
+		self.status_msg.emit("Training the model...", 0)
+		self.commandWidget.increment_total_iterations(nbIterations)
+		learningRate = self.commandWidget.learningRateInput.value()
+		trainer = Trainer(self.weights, self.normalizedData, nbIterations, learningRate)
 		trainer.signals.weights_updated.connect(self.update_weights)
 		trainer.signals.job_finished.connect(self.update_weights)
 		trainer.signals.job_finished.connect(self.training_finished)
@@ -122,6 +127,25 @@ class MainWidget(QWidget):
 			self.status_msg("WARNING ! " + str(e), 10000)
 			print_warning_msg("WARNING ! " + str(e))
 		self.commandWidget.enableTrainButton()
+
+
+	def reset_model(self):
+		try:
+			delete_weights_file()
+		except Exception as e:
+			self.status_msg.emit("WARNING ! " + str(e), 10000)
+		else:
+			self.status_msg.emit("Model reset to zero", 5000)
+		self.commandWidget.update_total_iterations(0)
+		self.weights = {"theta0": 0, "theta1": 0, "norm_factor": 0}
+		self.normalizedData = normalize_data(self.data, self.weights)
+		self.calculate_thetas()
+		self.commandWidget.update_thetas(self.theta0, self.theta1)
+		self.calculate_error()
+		self.commandWidget.update_error(self.modelError)
+		self.calculate_gradients()
+		self.commandWidget.update_gradients(self.gradient_t0, self.gradient_t1)
+		self.plot_model()
 
 
 	def plot_data(self):
@@ -152,7 +176,7 @@ class MainWidget(QWidget):
 			estimation = self.theta1 * car["km"] + self.theta0
 			gradient_t0 += estimation - car["price"]
 			gradient_t1 += (estimation - car["price"]) * car["km"]
-		gradient_t0 /= -dataSize
-		gradient_t1 /= -dataSize
+		gradient_t0 /= dataSize
+		gradient_t1 /= dataSize
 		self.gradient_t0 = gradient_t0
 		self.gradient_t1 = gradient_t1

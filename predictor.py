@@ -1,16 +1,16 @@
 import sys
 import random
-from parsing_tools import *
+from io_tools import *
 
 
 def estimate_price(distance, theta0=0, theta1=0, norm_factor=1):
     distance /= norm_factor
     estimation = theta1 * distance + theta0
-    return round(estimation * norm_factor)
+    return estimation * norm_factor
 
 
 if __name__ == "__main__":
-    currencies = ["$ ", "¥ ", "₡ ", "₱ ", "£ ", "€ ", "¢ ", "₩ ", "₭ ", "₮ ", "₦ ", " gold coins", "₽ ", "฿ ", "₺ ", "₴ ", " nickels", " credits", " darseks", " flanian pobble beads", " kalganids", " silver coins", " copper coins", " simoleons", " robux", " emeralds", " silver eagles", " ningis", "triganic pus"]
+    currencies = ["$ ", "¥ ", "₡ ", "₱ ", "£ ", "€ ", "¢ ", "₩ ", "₭ ", "₮ ", "₦ ", " gold coins", "₽ ", "฿ ", "₺ ", "₴ ", " nickels", " credits", " darseks", " flanian pobble beads", " kalganids", " silver coins", " copper coins", " simoleons", " robux", " emeralds", " silver eagles", " ningis", " triganic pus"]
 
     theta0 = 0
     theta1 = 0
@@ -42,10 +42,14 @@ if __name__ == "__main__":
                 if distance < 0:
                     print("The distance must be a positive number. Try again !")
                     check = False
-        print("Your car is worth %d%s."%(estimate_price(distance, theta0, theta1, norm_factor), random.choice(currencies)))
+        price = round(estimate_price(distance, theta0, theta1, norm_factor))
+        if price <= 0:
+            print("Your car is worth nothing !")
+        else:
+            print("Your car is worth %d%s."%(price, random.choice(currencies)))
         print("\nDo you want to know the price of another car ? (y/n)")
         yn=""
-        while yn.lower().strip() not in ["yes", "sure", "yeah", "yea", "yep", "yup", "oui", "y3s", "y", "no", "n", "n0", "nope", "non"]:
+        while yn.lower().strip() not in ["ye", "yes", "sure", "yeah", "yea", "yep", "yup", "oui", "y3s", "y", "no", "n", "n0", "nope", "non"]:
             yn = input("> ")
         if yn.lower().strip() in ["no", "n", "n0", "nope", "non"]:
             print("\nOk bye !")
